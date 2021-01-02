@@ -89,7 +89,23 @@ class LoginRestServlet(RestServlet):
             flows.append({"type": LoginRestServlet.CAS_TYPE})
 
         if self.cas_enabled or self.saml2_enabled or self.oidc_enabled:
-            flows.append({"type": LoginRestServlet.SSO_TYPE})
+            flows.append(
+                {
+                    "type": LoginRestServlet.SSO_TYPE,
+                    "org.matrix.msc2858.identity_providers": [
+                        {
+                            "id": "google",
+                            "name": "Google",
+                            "icon": "https://upload.wikimedia.org/wikipedia/commons/2/2d/Google-favicon-2015.png",
+                        },
+                        {
+                            "id": "github",
+                            "name": "Github",
+                            "icon": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                        },
+                    ],
+                }
+            )
             # While its valid for us to advertise this login type generally,
             # synapse currently only gives out these tokens as part of the
             # SSO login flow.
