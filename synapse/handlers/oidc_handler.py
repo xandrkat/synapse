@@ -23,6 +23,7 @@ from authlib.common.security import generate_token
 from authlib.jose import JsonWebToken
 from authlib.oauth2.auth import ClientAuth
 from authlib.oauth2.rfc6749.parameters import prepare_grant_uri
+from authlib.oauth2.rfc7523 import ClientSecretJWT, PrivateKeyJWT
 from authlib.oidc.core import CodeIDToken, ImplicitIDToken, UserInfo
 from authlib.oidc.discovery import OpenIDProviderMetadata, get_well_known_url
 from jinja2 import Environment, Template
@@ -223,6 +224,13 @@ class OidcError(Exception):
         return self.error
 
 
+CLIENT_AUTH_METHOD_MAP = {
+    **ClientAuth.DEFAULT_AUTH_METHODS,
+    "client_secret_jwt": ClientSecretJWT,
+    "private_key_jwt": PrivateKeyJWT,
+}
+
+
 class OidcProvider:
     """Wraps the config for a single OIDC IdentityProvider
 
@@ -244,8 +252,11 @@ class OidcProvider:
 
         self._scopes = provider.scopes
         self._user_profile_method = provider.user_profile_method
+
         self._client_auth = ClientAuth(
-            provider.client_id, provider.client_secret, provider.client_auth_method,
+            provider.client_id,
+            provider.client_secret,
+            CLIENT_AUTH_METHOD_MAP[provider.client_auth_method],
         )  # type: ClientAuth
         self._client_auth_method = provider.client_auth_method
         self._provider_metadata = OpenIDProviderMetadata(

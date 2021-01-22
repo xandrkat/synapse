@@ -94,9 +94,9 @@ class OIDCConfig(Config):
         #
         #   client_secret: Required. oauth2 client secret to use.
         #
-        #   client_auth_method: auth method to use when exchanging the token. Valid
-        #       values are 'client_secret_basic' (default), 'client_secret_post' and
-        #       'none'.
+        #   client_auth_method: the method the server should use to authenticate itself
+        #       to the token endpoint. Valid values are: 'client_secret_basic' (default),
+        #       'client_secret_post', 'client_secret_jwt', 'private_key_jwt', and 'none'.
         #
         #   scopes: list of scopes to request. This should normally include the "openid"
         #       scope. Defaults to ["openid"].
@@ -238,9 +238,15 @@ OIDC_PROVIDER_CONFIG_SCHEMA = {
         "client_auth_method": {
             "type": "string",
             # the following list is the same as the keys of
-            # authlib.oauth2.auth.ClientAuth.DEFAULT_AUTH_METHODS. We inline it
+            # oidc_handler.CLIENT_AUTH_METHOD_MAP. We inline it
             # to avoid importing authlib here.
-            "enum": ["client_secret_basic", "client_secret_post", "none"],
+            "enum": [
+                "client_secret_basic",
+                "client_secret_post",
+                "client_secret_jwt",
+                "private_key_jwt",
+                "none",
+            ],
         },
         "scopes": {"type": "array", "items": {"type": "string"}},
         "authorization_endpoint": {"type": "string"},
