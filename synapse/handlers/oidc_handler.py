@@ -572,6 +572,8 @@ class OidcProvider:
             headers={"Authorization": ["Bearer {}".format(token["access_token"])]},
         )
 
+        logger.debug("Retrieved user info from userinfo endpoint: %r", resp)
+
         return UserInfo(resp)
 
     async def _parse_id_token(self, token: Token, nonce: str) -> UserInfo:
@@ -600,17 +602,19 @@ class OidcProvider:
             claims_cls = ImplicitIDToken
 
         alg_values = metadata.get("id_token_signing_alg_values_supported", ["RS256"])
-
         jwt = JsonWebToken(alg_values)
 
         claim_options = {"iss": {"values": [metadata["issuer"]]}}
+
+        id_token = token["id_token"]
+        logger.debug("Attempting to decode JWT %r", id_token)
 
         # Try to decode the keys in cache first, then retry by forcing the keys
         # to be reloaded
         jwk_set = await self.load_jwks()
         try:
             claims = jwt.decode(
-                token["id_token"],
+                id_token,
                 key=jwk_set,
                 claims_cls=claims_cls,
                 claims_options=claim_options,
@@ -620,12 +624,14 @@ class OidcProvider:
             logger.info("Reloading JWKS after decode error")
             jwk_set = await self.load_jwks(force=True)  # try reloading the jwks
             claims = jwt.decode(
-                token["id_token"],
+                id_token,
                 key=jwk_set,
                 claims_cls=claims_cls,
                 claims_options=claim_options,
                 claims_params=claims_params,
             )
+
+        logger.debug("Decoded id_token JWT %r; validating", claims)
 
         claims.validate(leeway=120)  # allows 2 min of clock skew
         return UserInfo(claims)
