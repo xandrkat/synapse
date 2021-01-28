@@ -20,7 +20,7 @@
         <input type="submit" value="Continue">
         <!-- {% if user_attributes %} -->
         <section class="idp-pick-details">
-          <h2><img src="{{idp_icon | mxc_to_http(16, 16)}}"/>Information from {{ idp_name }}</h2>
+          <h2><img src="{{idp.idp_icon | mxc_to_http(16, 16)}}"/>Information from {{ idp.idp_name }}</h2>
           <!-- {% if user_attributes.avatar_url %} -->
           <div class="idp-detail idp-avatar">
             <label for="idp-avatar" class="name">Avatar</label>
