@@ -21,12 +21,13 @@ import attr
 from typing_extensions import NoReturn, Protocol
 
 from twisted.web.http import Request
+from twisted.web.iweb import IRequest
 
 from synapse.api.constants import LoginType
 from synapse.api.errors import Codes, NotFoundError, RedirectException, SynapseError
 from synapse.handlers.ui_auth import UIAuthSessionDataConstants
 from synapse.http import get_request_user_agent
-from synapse.http.server import respond_with_html
+from synapse.http.server import respond_with_html, respond_with_redirect
 from synapse.http.site import SynapseRequest
 from synapse.types import JsonDict, UserID, contains_invalid_mxid_characters
 from synapse.util.async_helpers import Linearizer
@@ -141,6 +142,11 @@ class UsernameMappingSession:
     # expiry time for the session, in milliseconds
     expiry_time_ms = attr.ib(type=int)
 
+    # choices made by the user
+    chosen_localpart = attr.ib(type=Optional[str], default=None)
+    use_display_name = attr.ib(type=bool, default=True)
+    terms_accepted_version = attr.ib(type=Optional[str], default=None)
+
 
 # the HTTP cookie used to track the mapping session id
 USERNAME_MAPPING_SESSION_COOKIE_NAME = b"username_mapping_session"
@@ -174,6 +180,8 @@ class SsoHandler:
 
         # map from idp_id to SsoIdentityProvider
         self._identity_providers = {}  # type: Dict[str, SsoIdentityProvider]
+
+        self._consent_at_registration = hs.config.consent.user_consent_at_registration
 
     def register_identity_provider(self, p: SsoIdentityProvider):
         p_id = p.idp_id
@@ -387,6 +395,9 @@ class SsoHandler:
                 to an additional page. (e.g. to prompt for more information)
 
         """
+
+        new_user = False
+
         # grab a lock while we try to find a mapping for this user. This seems...
         # optimistic, especially for implementations that end up redirecting to
         # interstitial pages.
@@ -427,9 +438,14 @@ class SsoHandler:
                     get_request_user_agent(request),
                     request.getClientIP(),
                 )
+                new_user = True
 
         await self._auth_handler.complete_sso_login(
-            user_id, request, client_redirect_url, extra_login_attributes
+            user_id,
+            request,
+            client_redirect_url,
+            extra_login_attributes,
+            new_user=new_user,
         )
 
     async def _call_attribute_mapper(
@@ -717,11 +733,67 @@ class SsoHandler:
         """
         session = self.get_mapping_session(session_id)
 
-        logger.info("[session %s] Registering localpart %s", session_id, localpart)
+        # update the session with the user's choices
+        session.chosen_localpart = localpart
+        session.use_display_name = use_display_name
 
-        attributes = UserAttributes(localpart=localpart, emails=session.emails,)
+        # we may now need to collect consent from the user, in which case, redirect
+        # to the consent-extraction-unit
+        if self._consent_at_registration:
+            redirect_url = b"/_synapse/client/new_user_consent"
 
-        if use_display_name:
+        # otherwise, redirect to the completion page
+        else:
+            redirect_url = b"/_synapse/client/sso_register"
+
+        respond_with_redirect(request, redirect_url)
+
+    async def handle_terms_accepted(
+        self, request: Request, session_id: str, terms_version: str
+    ):
+        """Handle a request to the new-user 'consent' endpoint
+
+        Will serve an HTTP response to the request.
+
+        Args:
+            request: HTTP request
+            session_id: ID of the username mapping session, extracted from a cookie
+            terms_version: the version of the terms which the user viewed and consented
+                to
+        """
+        logger.info(
+            "[session %s] User consented to terms version %s",
+            session_id,
+            terms_version,
+        )
+        session = self.get_mapping_session(session_id)
+        session.terms_accepted_version = terms_version
+
+        # we're done; now we can register the user
+        respond_with_redirect(request, b"/_synapse/client/sso_register")
+
+    async def register_sso_user(self, request: Request, session_id: str) -> None:
+        """Called once we have all the info we need to register a new user.
+
+        Does so and serves an HTTP response
+
+        Args:
+            request: HTTP request
+            session_id: ID of the username mapping session, extracted from a cookie
+        """
+        session = self.get_mapping_session(session_id)
+
+        logger.info(
+            "[session %s] Registering localpart %s",
+            session_id,
+            session.chosen_localpart,
+        )
+
+        attributes = UserAttributes(
+            localpart=session.chosen_localpart, emails=session.emails,
+        )
+
+        if session.use_display_name:
             attributes.display_name = session.display_name
 
         # the following will raise a 400 error if the username has been taken in the
@@ -752,6 +824,12 @@ class SsoHandler:
             path=b"/",
         )
 
+        if session.terms_accepted_version:
+            logger.debug("Recording user's consent to terms")
+            await self._registration_handler.on_user_consented(
+                user_id, session.terms_accepted_version
+            )
+
         await self._auth_handler.complete_sso_login(
             user_id,
             request,
@@ -770,3 +848,14 @@ class SsoHandler:
         for session_id in to_expire:
             logger.info("Expiring mapping session %s", session_id)
             del self._username_mapping_sessions[session_id]
+
+
+def get_username_mapping_session_cookie_from_request(request: IRequest) -> str:
+    """Extract the session ID from the cookie
+
+    Raises a SynapseError if the cookie isn't found
+    """
+    session_id = request.getCookie(USERNAME_MAPPING_SESSION_COOKIE_NAME)
+    if not session_id:
+        raise SynapseError(code=400, msg="missing session_id")
+    return session_id.decode("ascii", errors="replace")

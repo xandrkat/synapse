@@ -12,20 +12,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""Utilities for dealing with jinja2 templates"""
+
 import time
 import urllib.parse
-from typing import Callable, Iterable, Union
+from typing import TYPE_CHECKING, Callable, Iterable, Union
 
 import jinja2
 
-from synapse.config.homeserver import HomeServerConfig
-
-"""Utilities for dealing with jinja2 templates"""
+if TYPE_CHECKING:
+    from synapse.config.homeserver import HomeServerConfig
 
 
 def build_jinja_env(
     template_search_directories: Iterable[str],
-    config: HomeServerConfig,
+    config: "HomeServerConfig",
     autoescape: Union[bool, Callable[[str], bool], None] = None,
 ) -> jinja2.Environment:
     """Set up a Jinja2 environment to load templates from the given search path

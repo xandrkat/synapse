@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSO redirect confirmation</title>
+</head>
+    <body>
+    	<header>
+    		<h1>Your account is nearly ready</h1>
+    		<p>Just check your details before creating your account on {{ server_name }}</p>
+    	</header>
+    	<main>
+    		{% include "sso_profile_partial.html" %}
+            <p>Check the <a href="{{ terms_url }}">terms.</a></p>
+
+            <form method="post">
+                <input type="hidden" name="accepted_version" value="{{ consent_version }}"/>
+                <input type="submit"/>
+            </form>
+        </main>
+    </body>
+</html>

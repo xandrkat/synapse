@@ -715,9 +715,9 @@ class RegistrationHandler(BaseHandler):
             await self._register_msisdn_threepid(user_id, threepid)
 
         if auth_result and LoginType.TERMS in auth_result:
-            await self._on_user_consented(user_id, self.hs.config.user_consent_version)
+            await self.on_user_consented(user_id, self.hs.config.user_consent_version)
 
-    async def _on_user_consented(self, user_id: str, consent_version: str) -> None:
+    async def on_user_consented(self, user_id: str, consent_version: str) -> None:
         """A user consented to the terms on registration
 
         Args:

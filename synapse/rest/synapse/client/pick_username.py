@@ -12,17 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 from typing import TYPE_CHECKING
 
 import pkg_resources
 
 from twisted.web.http import Request
-from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
 from twisted.web.static import File
 
 from synapse.api.errors import SynapseError
-from synapse.handlers.sso import USERNAME_MAPPING_SESSION_COOKIE_NAME
+from synapse.handlers.sso import get_username_mapping_session_cookie_from_request
 from synapse.http.server import (
     DirectServeHtmlResource,
     DirectServeJsonResource,
@@ -34,6 +34,8 @@ from synapse.util.templates import build_jinja_env
 
 if TYPE_CHECKING:
     from synapse.server import HomeServer
+
+logger = logging.getLogger(__name__)
 
 
 def pick_username_resource(hs: "HomeServer") -> Resource:
@@ -75,9 +77,10 @@ class UsernamePickerTemplateResource(DirectServeHtmlResource):
 
     async def _async_render_GET(self, request: Request) -> None:
         try:
-            session_id = _get_session_cookie_from_request(request)
+            session_id = get_username_mapping_session_cookie_from_request(request)
             session = self._sso_handler.get_mapping_session(session_id)
         except SynapseError as e:
+            logger.warning("Error fetching session: %s", e)
             self._sso_handler.render_error(request, "bad_session", e.msg, code=e.code)
             return
 
@@ -98,16 +101,18 @@ class UsernamePickerTemplateResource(DirectServeHtmlResource):
 
     async def _async_render_POST(self, request: SynapseRequest):
         try:
-            localpart = parse_string(request, "username", required=True)
-            use_display_name = parse_boolean(request, "use_display_name", default=False)
+            session_id = get_username_mapping_session_cookie_from_request(request)
         except SynapseError as e:
-            self._sso_handler.render_error(request, "bad_param", e.msg, code=e.code)
+            logger.warning("Error fetching session cookie: %s", e)
+            self._sso_handler.render_error(request, "bad_session", e.msg, code=e.code)
             return
 
         try:
-            session_id = _get_session_cookie_from_request(request)
+            localpart = parse_string(request, "username", required=True)
+            use_display_name = parse_boolean(request, "use_display_name", default=False)
         except SynapseError as e:
-            self._sso_handler.render_error(request, "bad_session", e.msg, code=e.code)
+            logger.warning("[session %s] bad param: %s", session_id, e)
+            self._sso_handler.render_error(request, "bad_param", e.msg, code=e.code)
             return
 
         await self._sso_handler.handle_submit_username_request(
@@ -122,15 +127,8 @@ class AvailabilityCheckResource(DirectServeJsonResource):
 
     async def _async_render_GET(self, request: Request):
         localpart = parse_string(request, "username", required=True)
-        session_id = _get_session_cookie_from_request(request)
+        session_id = get_username_mapping_session_cookie_from_request(request)
         is_available = await self._sso_handler.check_username_availability(
             localpart, session_id
         )
         return 200, {"available": is_available}
-
-
-def _get_session_cookie_from_request(request: IRequest) -> str:
-    session_id = request.getCookie(USERNAME_MAPPING_SESSION_COOKIE_NAME)
-    if not session_id:
-        raise SynapseError(code=400, msg="missing session_id")
-    return session_id.decode("ascii", errors="replace")
