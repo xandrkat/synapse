@@ -27,7 +27,7 @@ class SSOConfig(Config):
         sso_config = config.get("sso") or {}  # type: Dict[str, Any]
 
         # The sso-specific template_dir
-        template_dir = sso_config.get("template_dir")
+        self.sso_template_dir = sso_config.get("template_dir")
 
         # Read templates from disk
         (
@@ -48,12 +48,7 @@ class SSOConfig(Config):
                 "sso_auth_success.html",
                 "sso_auth_bad_user.html",
             ],
-            template_dir,
-        )
-
-        # TODO: merge with the above once #9200 lands
-        (self.sso_auth_account_details_template,) = self.read_templates(
-            ["sso_auth_account_details.html"], template_dir, autoescape=True
+            self.sso_template_dir,
         )
 
         # These templates have no placeholders, so render them here
