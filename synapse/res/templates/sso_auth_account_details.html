@@ -3,6 +3,7 @@
   <head>
     <title>Synapse Login</title>
     <link rel="stylesheet" href="style.css" type="text/css" />
+    <meta charset="utf-8">
   </head>
   <body>
     <header>
@@ -14,7 +15,7 @@
         <div class="username_input">
           <label for="field-username">Username</label>
           <div class="prefix">@</div>
-          <input type="text" name="username" id="field-username" autofocus required pattern="[^a-z0-9\.\_\=\-\/]">
+          <input type="text" name="username" id="field-username" autofocus required pattern="[a-z0-9\-=_\/\.]+">
           <div class="postfix">:{{ server_name }}</div>
         </div>
         <input type="submit" value="Continue">
@@ -24,7 +25,7 @@
           <!-- {% if user_attributes.avatar_url %} -->
           <div class="idp-detail idp-avatar">
             <label for="idp-avatar" class="name">Avatar</label>
-            <label for="idp-avatar">Use</label>
+            <label for="idp-avatar" class="use">Use</label>
             <input type="checkbox" name="use_avatar" id="idp-avatar" checked>
             <img src="{{user_attributes.avatar_url}}" class="avatar" />
           </div>
@@ -32,7 +33,7 @@
           <!-- {% if user_attributes.display_name %} -->
           <div class="idp-detail">
             <label for="idp-displayname" class="name">Display name</label>
-            <label for="idp-displayname">Use</label>
+            <label for="idp-displayname" class="use">Use</label>
             <input type="checkbox" name="use_displayname" id="idp-displayname" checked>
             <p class="idp-value">{{ user_attributes.display_name }}</p>
           </div>
@@ -40,7 +41,7 @@
           <!-- {% if user_attributes.email %} -->
           <div class="idp-detail">
             <label for="idp-email" class="name">E-mail</label>
-            <label for="idp-email">Use</label>
+            <label for="idp-email" class="use">Use</label>
             <input type="checkbox" name="use_email" id="idp-email" checked>
             <p class="idp-value">{{ user_attributes.email }}</p>
           </div>
@@ -51,6 +52,6 @@
       <!-- this is used for feedback -->
       <div role=alert class="tooltip hidden" id="message"></div>
     </main>
-    <script src="script.js"></script>
+    <script src="../username_picker/script.js"></script>
   </body>
 </html>

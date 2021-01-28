@@ -1,46 +1,19 @@
-let usernameField = document.getElementById("field-username");
-let inputForm = document.getElementById("form");
-let submitButton = document.getElementById("button-submit");
-let message = document.getElementById("message");
+const usernameField = document.getElementById("field-username");
 
-// Submit username and receive response
-function showMessage(messageText) {
-    // Unhide the message text
-    message.classList.remove("hidden");
-
-    message.textContent = messageText;
-};
-
-let allowedUsernameCharacters = RegExp("[^a-z0-9\\.\\_\\=\\-\\/]");
-let allowedCharactersString = "lowercase letters, digits, ., _, -, /, =";
-usernameField.addEventListener("change", function(evt) {
-    usernameField.setCustomValidity("");
-    const username = usernameField.value;
-    if (usernameField.validity.valueMissing) {
-        usernameField.setCustomValidity("Please provide a username");
-        return;
+function throttle(fn, wait) {
+    let timeout;
+    return function() {
+        const args = Array.from(arguments);
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(fn.bind.apply(fn, [null].concat(args)), wait);
     }
-    if (usernameField.validity.patternMismatch) {
-        usernameField.setCustomValidity("Invalid username " + username + ". Only the following characters are allowed: " + allowedCharactersString);
-        return;
-    }
-    try {
-
-        checkUsernameAvailable(username).then(function(result) {
-            if (!result.available) {
-                usernameField.setCustomValidity(result.message);
-            }
-        }, function(err) {
-            showMessage(err.message);
-        });
-    } catch (err) {
-        showMessage("Could not verify ");
-    }
-});
+}
 
 function checkUsernameAvailable(username) {
     let check_uri = 'check?username=' + encodeURIComponent(username);
-    return feetch(check_uri, {
+    return fetch(check_uri, {
         // include the cookie
         "credentials": "same-origin",
     }).then((response) => {
@@ -56,7 +29,48 @@ function checkUsernameAvailable(username) {
         } else if(json.available) {
             return {available: true};
         } else {
-            return {message: "This username is not available, please choose another."};
+            return {message: username + " is not available, please choose another."};
         }
     });
 }
+
+function validateUsername(username) {
+    usernameField.setCustomValidity("");
+    if (usernameField.validity.valueMissing) {
+        usernameField.setCustomValidity("Please provide a username");
+        return;
+    }
+    if (usernameField.validity.patternMismatch) {
+        usernameField.setCustomValidity("Invalid username, please only use " + allowedCharactersString);
+        return;
+    }
+    usernameField.setCustomValidity("Checking if username is available …");
+    throttledCheckUsernameAvailable(username);
+}
+
+const throttledCheckUsernameAvailable = throttle(function(username) {
+    const handleError =  function(err) {
+        // don't prevent form submission on error
+        usernameField.setCustomValidity("");
+        console.log(err.message);
+    };
+    try {
+        checkUsernameAvailable(username).then(function(result) {
+            if (!result.available) {
+                usernameField.setCustomValidity(result.message);
+                usernameField.reportValidity();
+            } else {
+                usernameField.setCustomValidity("");
+            }
+        }, handleError);
+    } catch (err) {
+        handleError(err);
+    }
+}, 500);
+
+usernameField.addEventListener("input", function(evt) {
+    validateUsername(usernameField.value);
+});
+usernameField.addEventListener("change", function(evt) {
+    validateUsername(usernameField.value);
+});
