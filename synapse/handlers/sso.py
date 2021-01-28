@@ -656,9 +656,7 @@ class SsoHandler:
         )
         respond_with_html(request, 200, html)
 
-    def get_mapping_session(
-        self, session_id: Union[str, bytes]
-    ) -> UsernameMappingSession:
+    def get_mapping_session(self, session_id: str) -> UsernameMappingSession:
         """Look up the given username mapping session
 
         If it is not found, raises a SynapseError with an http code of 400
@@ -670,8 +668,6 @@ class SsoHandler:
         Raises:
             SynapseError if the session is not found/has expired
         """
-        if isinstance(session_id, bytes):
-            session_id = session_id.decode("utf-8")
         self._expire_old_sessions()
         session = self._username_mapping_sessions.get(session_id)
         if session:
@@ -712,7 +708,11 @@ class SsoHandler:
         return not user_infos
 
     async def handle_submit_username_request(
-        self, request: SynapseRequest, localpart: str, session_id: str
+        self,
+        request: SynapseRequest,
+        localpart: str,
+        use_displayname: bool,
+        session_id: str,
     ) -> None:
         """Handle a request to the username-picker 'submit' endpoint
 
@@ -721,17 +721,17 @@ class SsoHandler:
         Args:
             request: HTTP request
             localpart: localpart requested by the user
+            use_displayname: whether the user wants to use the suggested displayname
             session_id: ID of the username mapping session, extracted from a cookie
         """
         session = self.get_mapping_session(session_id)
 
         logger.info("[session %s] Registering localpart %s", session_id, localpart)
 
-        attributes = UserAttributes(
-            localpart=localpart,
-            display_name=session.display_name,
-            emails=session.emails,
-        )
+        attributes = UserAttributes(localpart=localpart, emails=session.emails,)
+
+        if use_displayname:
+            attributes.display_name = session.display_name
 
         # the following will raise a 400 error if the username has been taken in the
         # meantime.
@@ -743,7 +743,12 @@ class SsoHandler:
             request.getClientIP(),
         )
 
-        logger.info("[session %s] Registered userid %s", session_id, user_id)
+        logger.info(
+            "[session %s] Registered userid %s with attributes %s",
+            session_id,
+            user_id,
+            attributes,
+        )
 
         # delete the mapping session and the cookie
         del self._username_mapping_sessions[session_id]
