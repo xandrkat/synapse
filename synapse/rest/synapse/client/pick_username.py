@@ -101,7 +101,7 @@ class UsernamePickerTemplateResource(DirectServeHtmlResource):
     async def _async_render_POST(self, request: SynapseRequest):
         try:
             localpart = parse_string(request, "username", required=True)
-            use_displayname = parse_boolean(request, "use_displayname", default=False)
+            use_display_name = parse_boolean(request, "use_display_name", default=False)
         except SynapseError as e:
             self._sso_handler.render_error(request, "bad_param", e.msg, code=e.code)
             return
@@ -113,7 +113,7 @@ class UsernamePickerTemplateResource(DirectServeHtmlResource):
             return
 
         await self._sso_handler.handle_submit_username_request(
-            request, localpart, use_displayname, session_id
+            request, localpart, use_display_name, session_id
         )
 
 

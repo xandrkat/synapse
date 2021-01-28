@@ -14,16 +14,7 @@
 # limitations under the License.
 import abc
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Awaitable, Callable, Dict, List, Mapping, Optional
 from urllib.parse import urlencode
 
 import attr
@@ -711,7 +702,7 @@ class SsoHandler:
         self,
         request: SynapseRequest,
         localpart: str,
-        use_displayname: bool,
+        use_display_name: bool,
         session_id: str,
     ) -> None:
         """Handle a request to the username-picker 'submit' endpoint
@@ -721,7 +712,7 @@ class SsoHandler:
         Args:
             request: HTTP request
             localpart: localpart requested by the user
-            use_displayname: whether the user wants to use the suggested displayname
+            use_display_name: whether the user wants to use the suggested display name
             session_id: ID of the username mapping session, extracted from a cookie
         """
         session = self.get_mapping_session(session_id)
@@ -730,7 +721,7 @@ class SsoHandler:
 
         attributes = UserAttributes(localpart=localpart, emails=session.emails,)
 
-        if use_displayname:
+        if use_display_name:
             attributes.display_name = session.display_name
 
         # the following will raise a 400 error if the username has been taken in the
