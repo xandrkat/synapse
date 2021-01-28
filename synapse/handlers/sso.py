@@ -14,16 +14,7 @@
 # limitations under the License.
 import abc
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Awaitable, Callable, Dict, List, Mapping, Optional
 from urllib.parse import urlencode
 
 import attr
