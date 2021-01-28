@@ -5,15 +5,52 @@
     <link rel="stylesheet" href="style.css" type="text/css" />
   </head>
   <body>
-    <div class="card">
+    <header>
+      <h1>Your account is nearly ready</h1>
+      <p>Check your details before creating an account on {{ server_name }}</p>
+    </header>
+    <main>
       <form method="post" class="form__input" id="form" action="submit">
-        <label for="field-username">Please pick your username:</label>
-        <input type="text" name="username" id="field-username" autofocus="">
-        <input type="submit" class="button button--full-width" id="button-submit" value="Submit">
+        <div class="username_input">
+          <label for="field-username">Username</label>
+          <div class="prefix">@</div>
+          <input type="text" name="username" id="field-username" autofocus required pattern="[^a-z0-9\.\_\=\-\/]">
+          <div class="postfix">:{{ server_name }}</div>
+        </div>
+        <input type="submit" value="Continue">
+        <!-- {% if user_attributes %} -->
+        <section class="idp-pick-details">
+          <h2><img src="{{idp_icon | mxc_to_http(16, 16)}}"/>Information from {{ idp_name }}</h2>
+          <!-- {% if user_attributes.avatar_url %} -->
+          <div class="idp-detail idp-avatar">
+            <label for="idp-avatar" class="name">Avatar</label>
+            <label for="idp-avatar">Use</label>
+            <input type="checkbox" name="use_avatar" id="idp-avatar" checked>
+            <img src="{{user_attributes.avatar_url}}" class="avatar" />
+          </div>
+          <!-- {% endif %} -->
+          <!-- {% if user_attributes.display_name %} -->
+          <div class="idp-detail">
+            <label for="idp-displayname" class="name">Display name</label>
+            <label for="idp-displayname">Use</label>
+            <input type="checkbox" name="use_displayname" id="idp-displayname" checked>
+            <p class="idp-value">{{ user_attributes.display_name }}</p>
+          </div>
+          <!-- {% endif %} -->
+          <!-- {% if user_attributes.email %} -->
+          <div class="idp-detail">
+            <label for="idp-email" class="name">E-mail</label>
+            <label for="idp-email">Use</label>
+            <input type="checkbox" name="use_email" id="idp-email" checked>
+            <p class="idp-value">{{ user_attributes.email }}</p>
+          </div>
+          <!-- {% endif %} -->
+        </section>
+        <!-- {% endif %} -->
       </form>
       <!-- this is used for feedback -->
       <div role=alert class="tooltip hidden" id="message"></div>
-      <script src="script.js"></script>
-    </div>
+    </main>
+    <script src="script.js"></script>
   </body>
 </html>

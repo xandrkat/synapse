@@ -25,3 +25,6 @@ input[type="text"] {
   margin: 1em 0;
 }
 
+.username_input:invalid {
+  border: 2px dashed red;
+}
