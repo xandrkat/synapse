@@ -12,3 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from synapse.http.server import DirectServeHtmlResource
+
+
+class NewUserConsentResource(DirectServeHtmlResource):
+    """A resource which collects consent to the server's terms from a new user
+
+    This resource gets mounted at /_synapse/client/new_user_consent, and is shown
+    when we are automatically creating a new user due to an SSO login.
+
+    It shows a template which prompts the user to go and read the Ts and Cs, and click
+    a clickybox if they have done so.
+    """
