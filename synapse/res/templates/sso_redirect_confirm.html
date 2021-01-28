@@ -5,10 +5,16 @@
     <title>SSO redirect confirmation</title>
 </head>
     <body>
-        <p>The application at <span style="font-weight:bold">{{ display_url | e }}</span> is requesting full access to your <span style="font-weight:bold">{{ server_name }}</span> Matrix account.</p>
-        <p>If you don't recognise this address, you should ignore this and close this tab.</p>
-        <p>
-            <a href="{{ redirect_url | e }}">I trust this address</a>
-        </p>
+    	<header>
+    		<h1>Your account is now ready</h1>
+    		<p>You've made your account on {{ server_name }}.</p>
+            <p>Continue to confirm you trust <strong>{{ display_url | e }}</strong>.</p>
+    	</header>
+    	<main>
+    		{% include "sso_profile_partial.html" %}
+	        <form method="post" action="{{my_url}}">
+                <input type="submit" name="Continue">   
+            </form>
+    	</main>
     </body>
 </html>
