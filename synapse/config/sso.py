@@ -51,6 +51,11 @@ class SSOConfig(Config):
             template_dir,
         )
 
+        # TODO: merge with the above once #9200 lands
+        (self.sso_auth_account_details_template,) = self.read_templates(
+            ["sso_auth_account_details.html"], template_dir, autoescape=True
+        )
+
         # These templates have no placeholders, so render them here
         self.sso_account_deactivated_template = (
             sso_account_deactivated_template.render()

@@ -15,6 +15,7 @@
 from typing import TYPE_CHECKING
 
 import pkg_resources
+from jinja2 import Template
 
 from twisted.web.http import Request
 from twisted.web.resource import Resource
@@ -22,7 +23,11 @@ from twisted.web.static import File
 
 from synapse.api.errors import SynapseError
 from synapse.handlers.sso import USERNAME_MAPPING_SESSION_COOKIE_NAME
-from synapse.http.server import DirectServeHtmlResource, DirectServeJsonResource
+from synapse.http.server import (
+    DirectServeHtmlResource,
+    DirectServeJsonResource,
+    respond_with_html,
+)
 from synapse.http.servlet import parse_string
 from synapse.http.site import SynapseRequest
 
@@ -41,16 +46,48 @@ def pick_username_resource(hs: "HomeServer") -> Resource:
       browser back to the client URL
 
     * "check": checks if a userid is free.
+
+    XXX: update the above
     """
 
     # XXX should we make this path customisable so that admins can restyle it?
     base_path = pkg_resources.resource_filename("synapse", "res/username_picker")
-
     res = File(base_path)
+
+    res.putChild(b"account_details", UsernamePickerTemplateResource(hs))
     res.putChild(b"submit", SubmitResource(hs))
     res.putChild(b"check", AvailabilityCheckResource(hs))
 
     return res
+
+
+class UsernamePickerTemplateResource(DirectServeHtmlResource):
+    def __init__(self, hs: "HomeServer"):
+        super().__init__()
+        self._sso_handler = hs.get_sso_handler()
+        self._server_name = hs.hostname
+
+        self._account_details_template = (
+            hs.config.sso.sso_auth_account_details_template
+        )  # type: Template
+
+    async def _async_render_GET(self, request: Request) -> None:
+        session_id = request.getCookie(USERNAME_MAPPING_SESSION_COOKIE_NAME)
+        if not session_id:
+            raise SynapseError(code=400, msg="missing session_id")
+        session = self._sso_handler.get_mapping_session(session_id)
+
+        idp_id = session.auth_provider_id
+        template_params = {
+            "server_name": self._server_name,
+            "idp": self._sso_handler.get_identity_providers()[idp_id],
+            "user_attributes": {
+                "display_name": session.display_name,
+                "emails": session.emails,
+            },
+        }
+        html = self._account_details_template.render(template_params)
+        respond_with_html(request, 200, html)
 
 
 class AvailabilityCheckResource(DirectServeJsonResource):
