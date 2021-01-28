@@ -72,10 +72,13 @@ class UsernamePickerTemplateResource(DirectServeHtmlResource):
         )  # type: Template
 
     async def _async_render_GET(self, request: Request) -> None:
-        session_id = request.getCookie(USERNAME_MAPPING_SESSION_COOKIE_NAME)
-        if not session_id:
-            raise SynapseError(code=400, msg="missing session_id")
-        session = self._sso_handler.get_mapping_session(session_id)
+        try:
+            session_id = request.getCookie(USERNAME_MAPPING_SESSION_COOKIE_NAME)
+            if not session_id:
+                raise SynapseError(code=400, msg="missing session_id")
+            session = self._sso_handler.get_mapping_session(session_id)
+        except SynapseError as e:
+            self._sso_handler.render_error(request, "bad_session", e.msg, code=e.code)
 
         idp_id = session.auth_provider_id
         template_params = {
