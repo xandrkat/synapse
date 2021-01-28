@@ -10,7 +10,7 @@
       <p>Check your details before creating an account on {{ server_name }}</p>
     </header>
     <main>
-      <form method="post" class="form__input" id="form" action="submit">
+      <form method="post" class="form__input" id="form">
         <div class="username_input">
           <label for="field-username">Username</label>
           <div class="prefix">@</div>
@@ -25,7 +25,7 @@
           <div class="idp-detail idp-avatar">
             <label for="idp-avatar" class="name">Avatar</label>
             <label for="idp-avatar">Use</label>
-            <input type="checkbox" name="use_avatar" id="idp-avatar" checked>
+            <input type="checkbox" name="use_avatar" id="idp-avatar" value="true" checked>
             <img src="{{user_attributes.avatar_url}}" class="avatar" />
           </div>
           <!-- {% endif %} -->
@@ -33,7 +33,7 @@
           <div class="idp-detail">
             <label for="idp-displayname" class="name">Display name</label>
             <label for="idp-displayname">Use</label>
-            <input type="checkbox" name="use_displayname" id="idp-displayname" checked>
+            <input type="checkbox" name="use_displayname" id="idp-displayname" value="true" checked>
             <p class="idp-value">{{ user_attributes.display_name }}</p>
           </div>
           <!-- {% endif %} -->
@@ -41,7 +41,7 @@
           <div class="idp-detail">
             <label for="idp-email" class="name">E-mail</label>
             <label for="idp-email">Use</label>
-            <input type="checkbox" name="use_email" id="idp-email" checked>
+            <input type="checkbox" name="use_email" id="idp-email" value="true" checked>
             <p class="idp-value">{{ user_attributes.email }}</p>
           </div>
           <!-- {% endif %} -->
