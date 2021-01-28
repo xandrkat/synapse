@@ -14,7 +14,16 @@
 # limitations under the License.
 import abc
 import logging
-from typing import TYPE_CHECKING, Awaitable, Callable, Dict, List, Mapping, Optional
+from typing import (
+    TYPE_CHECKING,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 from urllib.parse import urlencode
 
 import attr
@@ -647,7 +656,9 @@ class SsoHandler:
         )
         respond_with_html(request, 200, html)
 
-    def get_mapping_session(self, session_id: str) -> UsernameMappingSession:
+    def get_mapping_session(
+        self, session_id: Union[str, bytes]
+    ) -> UsernameMappingSession:
         """Look up the given username mapping session
 
         If it is not found, raises a SynapseError with an http code of 400
@@ -659,6 +670,8 @@ class SsoHandler:
         Raises:
             SynapseError if the session is not found/has expired
         """
+        if isinstance(session_id, bytes):
+            session_id = session_id.decode("utf-8")
         self._expire_old_sessions()
         session = self._username_mapping_sessions.get(session_id)
         if session:
