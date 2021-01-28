@@ -12,9 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import TYPE_CHECKING, Callable, Iterable, Union
+from typing import TYPE_CHECKING
 
-import jinja2
 import pkg_resources
 
 from twisted.web.http import Request
@@ -23,8 +22,6 @@ from twisted.web.resource import Resource
 from twisted.web.static import File
 
 from synapse.api.errors import SynapseError
-from synapse.config._base import _create_mxc_to_http_filter, _format_ts_filter
-from synapse.config.homeserver import HomeServerConfig
 from synapse.handlers.sso import USERNAME_MAPPING_SESSION_COOKIE_NAME
 from synapse.http.server import (
     DirectServeHtmlResource,
@@ -33,6 +30,7 @@ from synapse.http.server import (
 )
 from synapse.http.servlet import parse_boolean, parse_string
 from synapse.http.site import SynapseRequest
+from synapse.util.templates import build_jinja_env
 
 if TYPE_CHECKING:
     from synapse.server import HomeServer
@@ -136,51 +134,3 @@ def _get_session_cookie_from_request(request: IRequest) -> str:
     if not session_id:
         raise SynapseError(code=400, msg="missing session_id")
     return session_id.decode("ascii", errors="replace")
-
-
-# TODO: move this not-here and call it from more places
-def build_jinja_env(
-    template_search_directories: Iterable[str],
-    config: HomeServerConfig,
-    autoescape: Union[bool, Callable[[str], bool], None] = None,
-) -> jinja2.Environment:
-    """Set up a Jinja2 environment to load templates from the given search path
-
-    The returned environment defines the following filters:
-        - format_ts: formats timestamps as strings in the server's local timezone
-             (XXX: why is that useful??)
-        - mxc_to_http: converts mxc: uris to http URIs. Args are:
-             (uri, width, height, resize_method="crop")
-
-    and the following global variables:
-        - server_name: matrix server name
-
-    Args:
-        template_search_directories: directories to search for templates
-        config: homeserver config, for things like `server_name` and `public_baseurl`
-        autoescape: whether template variables should be autoescaped. bool, or
-           a function mapping from template name to bool. Defaults to escaping templates
-           whose names end in .html, .xml or .htm.
-
-    Returns:
-        jinja environment
-    """
-
-    if autoescape is None:
-        autoescape = jinja2.select_autoescape()
-
-    loader = jinja2.FileSystemLoader(template_search_directories)
-    env = jinja2.Environment(loader=loader, autoescape=autoescape)
-
-    # Update the environment with our custom filters
-    env.filters.update(
-        {
-            "format_ts": _format_ts_filter,
-            "mxc_to_http": _create_mxc_to_http_filter(config.public_baseurl),
-        }
-    )
-
-    # common variables for all templates
-    env.globals.update({"server_name": config.server_name})
-
-    return env
