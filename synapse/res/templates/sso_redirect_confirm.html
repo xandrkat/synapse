@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>SSO redirect confirmation</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <style type="text/css">
+      {% include "sso.css" without context %}
+    </style>
 </head>
     <body>
     	<header>
@@ -16,13 +20,10 @@
                 <img src="{{ user_profile.avatar_url }}" class="avatar" />
                 <div class="profile-details">
                     <div class="display-name">{{ user_profile.display_name }}</div>
-                    <div class="user-id">{{ user_id }}</div>
+                    <div class="user-id">{{ user_profile.user_id }}</div>
                 </div>
             </div>
             <!-- {% endif %} -->
-	        <form method="post" action="{{my_url}}">
-                <input type="submit" name="Continue">   
-            </form>
 	        <a href="{{redirect_url}}" class="primary-button"/>Continue</a>
     	</main>
     </body>
