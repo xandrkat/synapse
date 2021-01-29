@@ -10,8 +10,12 @@
 </head>
     <body>
     	<header>
+            <!-- {% if new_user %} -->
     		<h1>Your account is now ready</h1>
     		<p>You've made your account on {{ server_name }}.</p>
+            <!-- {% else %} -->
+            <h1>Log in</h1>
+            <!-- {% endif %} -->
             <p>Continue to confirm you trust <strong>{{ display_url | e }}</strong>.</p>
     	</header>
     	<main>
