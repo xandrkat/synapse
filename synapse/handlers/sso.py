@@ -824,11 +824,14 @@ class SsoHandler:
             path=b"/",
         )
 
+        auth_result = {}
         if session.terms_accepted_version:
-            logger.debug("Recording user's consent to terms")
-            await self._registration_handler.on_user_consented(
-                user_id, session.terms_accepted_version
-            )
+            # TODO: make this less awful.
+            auth_result[LoginType.TERMS] = True
+
+        await self._registration_handler.post_registration_actions(
+            user_id, auth_result, access_token=None
+        )
 
         await self._auth_handler.complete_sso_login(
             user_id,

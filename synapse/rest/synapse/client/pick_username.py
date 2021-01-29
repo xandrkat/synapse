@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -41,29 +42,21 @@ logger = logging.getLogger(__name__)
 def pick_username_resource(hs: "HomeServer") -> Resource:
     """Factory method to generate the username picker resource.
 
-    This resource gets mounted under /_synapse/client/pick_username. The top-level
-    resource is just a File resource which serves up the static files in the resources
-    "res" directory, but it has a couple of children:
+    This resource gets mounted under /_synapse/client/pick_username and has two
+       children:
 
-    * "submit", which does the mechanics of registering the new user, and redirects the
-      browser back to the client URL
-
-    * "check": checks if a userid is free.
-
-    XXX: update the above
+      * "account_details": renders the form and handles the POSTed response
+      * "check": a JSON endpoint which checks if a userid is free.
     """
 
-    # XXX should we make this path customisable so that admins can restyle it?
-    base_path = pkg_resources.resource_filename("synapse", "res/username_picker")
-    res = File(base_path)
-
-    res.putChild(b"account_details", UsernamePickerTemplateResource(hs))
+    res = Resource()
+    res.putChild(b"account_details", AccountDetailsResource(hs))
     res.putChild(b"check", AvailabilityCheckResource(hs))
 
     return res
 
 
-class UsernamePickerTemplateResource(DirectServeHtmlResource):
+class AccountDetailsResource(DirectServeHtmlResource):
     def __init__(self, hs: "HomeServer"):
         super().__init__()
         self._sso_handler = hs.get_sso_handler()
