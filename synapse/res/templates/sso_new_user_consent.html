@@ -6,12 +6,11 @@
 </head>
     <body>
     	<header>
-    		<h1>Your account is now ready</h1>
-    		<p>You've made your account on {{ server_name }}.</p>
-            <p>Continue to confirm you trust <strong>{{ display_url | e }}</strong>.</p>
+    		<h1>Your account is nearly ready</h1>
+    		<p>Just check your details before creating your account on {{ server_name }}</p>
     	</header>
     	<main>
-            <!-- {% if user_profile %} -->
+    		<!-- {% if user_profile %} -->
             <div class="profile">
                 <img src="{{ user_profile.avatar_url }}" class="avatar" />
                 <div class="profile-details">
@@ -20,9 +19,11 @@
                 </div>
             </div>
             <!-- {% endif %} -->
-	        <form method="post" action="{{my_url}}">
-                <input type="submit" name="Continue">   
-            </form>
+	        <p>The application at <strong>{ display_url | e }}</strong> is requesting full access to your <strong>{{ server_name }}</strong> Matrix account.</p>
+	        <p>If you don't recognise this address, you should ignore this and close this tab.</p>
+	        <p>
+	            <a href="{{ redirect_url | e }}" class="primary-button">I trust this address</a>
+	        </p>
     	</main>
     </body>
 </html>
