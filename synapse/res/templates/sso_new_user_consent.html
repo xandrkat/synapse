@@ -18,7 +18,7 @@
     		<p>Agree to the terms to create your account.</p>
     	</header>
     	<main>
-    		<!-- {% if user_profile %} --->
+            <!-- {% if user_profile.avatar_url and user_profile.display_name %} -->
             <div class="profile">
                 <img src="{{ user_profile.avatar_url | mxc_to_http(64, 64) }}" class="avatar" />
                 <div class="profile-details">
