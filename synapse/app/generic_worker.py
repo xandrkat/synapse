@@ -127,7 +127,7 @@ from synapse.rest.client.v2_alpha.sendtodevice import SendToDeviceRestServlet
 from synapse.rest.client.versions import VersionsRestServlet
 from synapse.rest.health import HealthResource
 from synapse.rest.key.v2 import KeyApiV2Resource
-from synapse.rest.synapse.client import build_sso_login_resource_tree
+from synapse.rest.synapse.client import build_synapse_client_resource_tree
 from synapse.server import HomeServer, cache_in_self
 from synapse.storage.databases.main.censor_events import CensorEventsStore
 from synapse.storage.databases.main.client_ips import ClientIpWorkerStore
@@ -559,7 +559,7 @@ class GenericWorkerServer(HomeServer):
 
                     resources.update({CLIENT_API_PREFIX: resource})
 
-                    resources.update(build_sso_login_resource_tree(self))
+                    resources.update(build_synapse_client_resource_tree(self))
                 elif name == "federation":
                     resources.update({FEDERATION_PREFIX: TransportLayerServer(self)})
                 elif name == "media":

@@ -26,22 +26,26 @@ if TYPE_CHECKING:
     from synapse.server import HomeServer
 
 
-def build_sso_login_resource_tree(hs: "HomeServer") -> Mapping[str, Resource]:
-    """Builds a resource tree to include the resources used for SSO login.
+def build_synapse_client_resource_tree(hs: "HomeServer") -> Mapping[str, Resource]:
+    """Builds a resource tree to include synapse-specific client resources
 
-    These are always loaded as part of the 'client' resource, whether or not SSO
-    login is actually enabled (they just won't work very well if it's not)
+    These are resources which should be loaded on all workers which expose a C-S API:
+    ie, the main process, and any generic workers so configured.
 
     Returns:
          map from path to Resource.
     """
     resources = {
+        # SSO bits. These are always loaded, whether or not SSO login is actually
+        # enabled (they just won't work very well if it's not)
         "/_synapse/client/pick_idp": PickIdpResource(hs),
         "/_synapse/client/pick_username": pick_username_resource(hs),
         "/_synapse/client/new_user_consent": NewUserConsentResource(hs),
         "/_synapse/client/sso_register": SsoRegisterResource(hs),
     }
 
+    # provider-specific SSO bits. Only load these if they are enabled, since they
+    # rely on optional dependencies.
     if hs.config.oidc_enabled:
         from synapse.rest.oidc import OIDCResource
 
@@ -55,4 +59,4 @@ def build_sso_login_resource_tree(hs: "HomeServer") -> Mapping[str, Resource]:
     return resources
 
 
-__all__ = ["build_sso_login_resource_tree"]
+__all__ = ["build_synapse_client_resource_tree"]

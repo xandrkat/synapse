@@ -29,7 +29,7 @@ from synapse.appservice import ApplicationService
 from synapse.rest.client.v1 import login, logout
 from synapse.rest.client.v2_alpha import devices, register
 from synapse.rest.client.v2_alpha.account import WhoamiRestServlet
-from synapse.rest.synapse.client import build_sso_login_resource_tree
+from synapse.rest.synapse.client import build_synapse_client_resource_tree
 from synapse.types import create_requester
 
 from tests import unittest
@@ -423,7 +423,7 @@ class MultiSSOTestCase(unittest.HomeserverTestCase):
 
     def create_resource_dict(self) -> Dict[str, Resource]:
         d = super().create_resource_dict()
-        d.update(build_sso_login_resource_tree(self.hs))
+        d.update(build_synapse_client_resource_tree(self.hs))
         return d
 
     def test_get_login_flows(self):
@@ -1208,7 +1208,7 @@ class UsernamePickerTestCase(HomeserverTestCase):
 
     def create_resource_dict(self) -> Dict[str, Resource]:
         d = super().create_resource_dict()
-        d.update(build_sso_login_resource_tree(self.hs))
+        d.update(build_synapse_client_resource_tree(self.hs))
         return d
 
     def test_username_picker(self):
