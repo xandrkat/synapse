@@ -838,6 +838,7 @@ class SsoHandler:
             request,
             session.client_redirect_url,
             session.extra_login_attributes,
+            new_user=True,
         )
 
     def _expire_old_sessions(self):
