@@ -25,6 +25,8 @@ h2 {
 h2 img {
   vertical-align: middle;
   margin-right: 8px;
+  width: 24px;
+  height: 24px;
 }
 
 label {
