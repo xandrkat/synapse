@@ -225,7 +225,6 @@ expressions:
     ^/_matrix/client/(api/v1|r0|unstable)/joined_groups$
     ^/_matrix/client/(api/v1|r0|unstable)/publicised_groups$
     ^/_matrix/client/(api/v1|r0|unstable)/publicised_groups/
-    ^/_synapse/client/password_reset/email/submit_token$
 
     # Registration/login requests
     ^/_matrix/client/(api/v1|r0|unstable)/login$
@@ -272,12 +271,12 @@ using):
     # CAS requests.
     ^/_matrix/client/(api/v1|r0|unstable)/login/cas/ticket$
 
-Note that a HTTP listener with `client` and `federation` resources must be
-configured in the `worker_listeners` option in the worker config.
-
-Ensure that all SSO logins go to a single process (usually the main process).
+Ensure that all SSO logins go to a single process.
 For multiple workers not handling the SSO endpoints properly, see
 [#7530](https://github.com/matrix-org/synapse/issues/7530).
+
+Note that a HTTP listener with `client` and `federation` resources must be
+configured in the `worker_listeners` option in the worker config.
 
 #### Load balancing
 
