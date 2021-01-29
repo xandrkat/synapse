@@ -77,6 +77,6 @@ main {
   color: #737D8C;
 }
 
-.profile ..display-name, .profile .user-id {
+.profile .display-name, .profile .user-id {
   line-height: 18px;
 }
