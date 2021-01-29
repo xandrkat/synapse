@@ -35,12 +35,24 @@ def build_sso_login_resource_tree(hs: "HomeServer") -> Mapping[str, Resource]:
     Returns:
          map from path to Resource.
     """
-    return {
+    resources = {
         "/_synapse/client/pick_idp": PickIdpResource(hs),
         "/_synapse/client/pick_username": pick_username_resource(hs),
         "/_synapse/client/new_user_consent": NewUserConsentResource(hs),
         "/_synapse/client/sso_register": SsoRegisterResource(hs),
     }
+
+    if hs.config.oidc_enabled:
+        from synapse.rest.oidc import OIDCResource
+
+        resources["/_synapse/oidc"] = OIDCResource(hs)
+
+    if hs.config.saml2_enabled:
+        from synapse.rest.saml2 import SAML2Resource
+
+        resources["/_matrix/saml2"] = SAML2Resource(hs)
+
+    return resources
 
 
 __all__ = ["build_sso_login_resource_tree"]

@@ -693,6 +693,8 @@ class RegistrationHandler(BaseHandler):
             access_token: The access token of the newly logged in device, or
                 None if `inhibit_login` enabled.
         """
+        # TODO: 3pid registration can actually happen on the workers. Consider
+        # refactoring it.
         if self.hs.config.worker_app:
             await self._post_registration_client(
                 user_id=user_id, auth_result=auth_result, access_token=access_token
@@ -715,9 +717,9 @@ class RegistrationHandler(BaseHandler):
             await self._register_msisdn_threepid(user_id, threepid)
 
         if auth_result and LoginType.TERMS in auth_result:
-            await self.on_user_consented(user_id, self.hs.config.user_consent_version)
+            await self._on_user_consented(user_id, self.hs.config.user_consent_version)
 
-    async def on_user_consented(self, user_id: str, consent_version: str) -> None:
+    async def _on_user_consented(self, user_id: str, consent_version: str) -> None:
         """A user consented to the terms on registration
 
         Args:
