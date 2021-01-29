@@ -112,6 +112,11 @@ main {
   color: #737D8C;
 }
 
+.idp-pick-details .idp-value {
+  margin: 0;
+  margin-top: 8px;
+}
+
 .idp-pick-details .avatar {
   width: 53px;
   height: 53px;
