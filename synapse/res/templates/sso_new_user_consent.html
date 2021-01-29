@@ -3,27 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>SSO redirect confirmation</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <style type="text/css">
+      {% include "sso.css" without context %}
+
+      #consent_form {
+        margin-top: 56px;
+      }
+    </style>
 </head>
     <body>
     	<header>
     		<h1>Your account is nearly ready</h1>
-    		<p>Just check your details before creating your account on {{ server_name }}</p>
+    		<p>Agree to the terms to create your account.</p>
     	</header>
     	<main>
-    		<!-- {% if user_profile %} -->
+    		<!-- {% if user_profile %} --->
             <div class="profile">
                 <img src="{{ user_profile.avatar_url }}" class="avatar" />
                 <div class="profile-details">
                     <div class="display-name">{{ user_profile.display_name }}</div>
-                    <div class="user-id">{{ user_id }}</div>
+                    <div class="user-id">{{ user_profile.user_id }}</div>
                 </div>
             </div>
             <!-- {% endif %} -->
-	       <p>Check the <a href="{{ terms_url }}">terms.</a></p>
-
-            <form method="post">
-                <input type="hidden" name="accepted_version" value="{{ consent_version }}"/>
-                <input type="submit"/>
+            <form method="post" action="{{my_url}}" id="consent_form">
+                <p>
+                    <input id="accepted_version" type="checkbox" name="accepted_version" value="{{ consent_version }}" required>
+                    <label for="accepted_version">I have read and agree to the <a href="{{ terms_url }}" target="_blank">terms and conditions</a>.</label>
+                </p>
+                <input type="submit" class="primary-button" value="Continue"/>
             </form>
     	</main>
     </body>
