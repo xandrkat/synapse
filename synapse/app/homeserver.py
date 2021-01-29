@@ -60,6 +60,7 @@ from synapse.rest import ClientRestResource
 from synapse.rest.admin import AdminRestResource
 from synapse.rest.health import HealthResource
 from synapse.rest.key.v2 import KeyApiV2Resource
+from synapse.rest.synapse.client import build_sso_login_resource_tree
 from synapse.rest.synapse.client.new_user_consent import NewUserConsentResource
 from synapse.rest.synapse.client.pick_idp import PickIdpResource
 from synapse.rest.synapse.client.pick_username import pick_username_resource
@@ -192,10 +193,7 @@ class SynapseHomeServer(HomeServer):
                     "/_matrix/client/versions": client_resource,
                     "/.well-known/matrix/client": WellKnownResource(self),
                     "/_synapse/admin": AdminRestResource(self),
-                    "/_synapse/client/pick_username": pick_username_resource(self),
-                    "/_synapse/client/pick_idp": PickIdpResource(self),
-                    "/_synapse/client/new_user_consent": NewUserConsentResource(self),
-                    "/_synapse/client/sso_register": SsoRegisterResource(self),
+                    **build_sso_login_resource_tree(self),
                 }
             )
 
