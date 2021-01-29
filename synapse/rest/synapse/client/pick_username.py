@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -57,13 +58,13 @@ def pick_username_resource(hs: "HomeServer") -> Resource:
     base_path = pkg_resources.resource_filename("synapse", "res/username_picker")
     res = File(base_path)
 
-    res.putChild(b"account_details", UsernamePickerTemplateResource(hs))
+    res.putChild(b"account_details", AccountDetailsResource(hs))
     res.putChild(b"check", AvailabilityCheckResource(hs))
 
     return res
 
 
-class UsernamePickerTemplateResource(DirectServeHtmlResource):
+class AccountDetailsResource(DirectServeHtmlResource):
     def __init__(self, hs: "HomeServer"):
         super().__init__()
         self._sso_handler = hs.get_sso_handler()
