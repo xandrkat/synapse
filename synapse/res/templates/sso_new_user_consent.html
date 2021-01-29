@@ -19,11 +19,12 @@
                 </div>
             </div>
             <!-- {% endif %} -->
-	        <p>The application at <strong>{ display_url | e }}</strong> is requesting full access to your <strong>{{ server_name }}</strong> Matrix account.</p>
-	        <p>If you don't recognise this address, you should ignore this and close this tab.</p>
-	        <p>
-	            <a href="{{ redirect_url | e }}" class="primary-button">I trust this address</a>
-	        </p>
+	       <p>Check the <a href="{{ terms_url }}">terms.</a></p>
+
+            <form method="post">
+                <input type="hidden" name="accepted_version" value="{{ consent_version }}"/>
+                <input type="submit"/>
+            </form>
     	</main>
     </body>
 </html>
