@@ -395,7 +395,6 @@ class SsoHandler:
                 to an additional page. (e.g. to prompt for more information)
 
         """
-
         new_user = False
 
         # grab a lock while we try to find a mapping for this user. This seems...

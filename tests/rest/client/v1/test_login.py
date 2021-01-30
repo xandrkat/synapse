@@ -1268,7 +1268,7 @@ class UsernamePickerTestCase(HomeserverTestCase):
         chan = self.make_request(
             "GET",
             path=location_headers[0],
-            custom_headers=[("Cookie", "username_mapping_session=" + session_id),],
+            custom_headers=[("Cookie", "username_mapping_session=" + session_id)],
         )
         self.assertEqual(chan.code, 302, chan.result)
         location_headers = chan.headers.getRawHeaders("Location")
