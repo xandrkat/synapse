@@ -16,11 +16,8 @@
 import logging
 from typing import TYPE_CHECKING
 
-import pkg_resources
-
 from twisted.web.http import Request
 from twisted.web.resource import Resource
-from twisted.web.static import File
 
 from synapse.api.errors import SynapseError
 from synapse.handlers.sso import get_username_mapping_session_cookie_from_request
@@ -56,6 +53,22 @@ def pick_username_resource(hs: "HomeServer") -> Resource:
     return res
 
 
+class AvailabilityCheckResource(DirectServeJsonResource):
+    def __init__(self, hs: "HomeServer"):
+        super().__init__()
+        self._sso_handler = hs.get_sso_handler()
+
+    async def _async_render_GET(self, request: Request):
+        localpart = parse_string(request, "username", required=True)
+
+        session_id = get_username_mapping_session_cookie_from_request(request)
+
+        is_available = await self._sso_handler.check_username_availability(
+            localpart, session_id
+        )
+        return 200, {"available": is_available}
+
+
 class AccountDetailsResource(DirectServeHtmlResource):
     def __init__(self, hs: "HomeServer"):
         super().__init__()
@@ -86,8 +99,6 @@ class AccountDetailsResource(DirectServeHtmlResource):
             },
         }
 
-        # loaded dynamically to allow easier update cycles. (jinja will only reload it
-        # if the mtime changes)
         template = self._jinja_env.get_template("sso_auth_account_details.html")
         html = template.render(template_params)
         respond_with_html(request, 200, html)
@@ -111,17 +122,3 @@ class AccountDetailsResource(DirectServeHtmlResource):
         await self._sso_handler.handle_submit_username_request(
             request, localpart, use_display_name, session_id
         )
-
-
-class AvailabilityCheckResource(DirectServeJsonResource):
-    def __init__(self, hs: "HomeServer"):
-        super().__init__()
-        self._sso_handler = hs.get_sso_handler()
-
-    async def _async_render_GET(self, request: Request):
-        localpart = parse_string(request, "username", required=True)
-        session_id = get_username_mapping_session_cookie_from_request(request)
-        is_available = await self._sso_handler.check_username_availability(
-            localpart, session_id
-        )
-        return 200, {"available": is_available}
