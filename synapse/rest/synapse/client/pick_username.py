@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from twisted.web.http import Request
 from twisted.web.resource import Resource
@@ -114,11 +114,18 @@ class AccountDetailsResource(DirectServeHtmlResource):
         try:
             localpart = parse_string(request, "username", required=True)
             use_display_name = parse_boolean(request, "use_display_name", default=False)
+
+            try:
+                emails_to_use = [
+                    val.decode("utf-8") for val in request.args.get(b"use_email", [])
+                ]  # type: List[str]
+            except ValueError:
+                raise SynapseError(400, "Query parameter use_email must be utf-8")
         except SynapseError as e:
             logger.warning("[session %s] bad param: %s", session_id, e)
             self._sso_handler.render_error(request, "bad_param", e.msg, code=e.code)
             return
 
         await self._sso_handler.handle_submit_username_request(
-            request, localpart, use_display_name, session_id
+            request, session_id, localpart, use_display_name, emails_to_use
         )
