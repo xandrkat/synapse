@@ -144,6 +144,8 @@ class SSOConfig(Config):
             #     * new_user: a boolean indicating whether this is the user's first time
             #          logging in.
             #
+            #     * user_id: the user's matrix ID.
+            #
             #     * user_profile.avatar_url: an MXC URI for the user's avatar, if any.
             #           None if the user has not set an avatar.
             #
