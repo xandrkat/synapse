@@ -1445,6 +1445,10 @@ class AuthHandler(BaseHandler):
 
         This exists purely for backwards compatibility of synapse.module_api.ModuleApi.
         """
+
+        if user_profile_data is None:
+            user_profile_data = ProfileInfo(None, None)
+
         # Store any extra attributes which will be passed in the login response.
         # Note that this is per-user so it may overwrite a previous value, this
         # is considered OK since the newest SSO attributes should be most valid.
@@ -1477,14 +1481,6 @@ class AuthHandler(BaseHandler):
         # it. This is only to display a human-readable URL in the template, but not the
         # URL we redirect users to.
         redirect_url_no_params = client_redirect_url.split("?")[0]
-
-        # leave user_profile unset if it is empty
-        if (
-            user_profile_data is not None
-            and not user_profile_data.avatar_url
-            and not user_profile_data.display_name
-        ):
-            user_profile_data = None
 
         html = self._sso_redirect_confirm_template.render(
             display_url=redirect_url_no_params,

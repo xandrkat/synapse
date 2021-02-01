@@ -43,7 +43,9 @@ def build_jinja_env(
 
     Args:
         template_search_directories: directories to search for templates
+
         config: homeserver config, for things like `server_name` and `public_baseurl`
+
         autoescape: whether template variables should be autoescaped. bool, or
            a function mapping from template name to bool. Defaults to escaping templates
            whose names end in .html, .xml or .htm.

@@ -14,13 +14,10 @@
 # limitations under the License.
 
 import logging
-from typing import TYPE_CHECKING
-
-import pkg_resources
+from typing import TYPE_CHECKING, List
 
 from twisted.web.http import Request
 from twisted.web.resource import Resource
-from twisted.web.static import File
 
 from synapse.api.errors import SynapseError
 from synapse.handlers.sso import get_username_mapping_session_cookie_from_request
@@ -56,6 +53,22 @@ def pick_username_resource(hs: "HomeServer") -> Resource:
     return res
 
 
+class AvailabilityCheckResource(DirectServeJsonResource):
+    def __init__(self, hs: "HomeServer"):
+        super().__init__()
+        self._sso_handler = hs.get_sso_handler()
+
+    async def _async_render_GET(self, request: Request):
+        localpart = parse_string(request, "username", required=True)
+
+        session_id = get_username_mapping_session_cookie_from_request(request)
+
+        is_available = await self._sso_handler.check_username_availability(
+            localpart, session_id
+        )
+        return 200, {"available": is_available}
+
+
 class AccountDetailsResource(DirectServeHtmlResource):
     def __init__(self, hs: "HomeServer"):
         super().__init__()
@@ -86,8 +99,6 @@ class AccountDetailsResource(DirectServeHtmlResource):
             },
         }
 
-        # loaded dynamically to allow easier update cycles. (jinja will only reload it
-        # if the mtime changes)
         template = self._jinja_env.get_template("sso_auth_account_details.html")
         html = template.render(template_params)
         respond_with_html(request, 200, html)
@@ -103,25 +114,18 @@ class AccountDetailsResource(DirectServeHtmlResource):
         try:
             localpart = parse_string(request, "username", required=True)
             use_display_name = parse_boolean(request, "use_display_name", default=False)
+
+            try:
+                emails_to_use = [
+                    val.decode("utf-8") for val in request.args.get(b"use_email", [])
+                ]  # type: List[str]
+            except ValueError:
+                raise SynapseError(400, "Query parameter use_email must be utf-8")
         except SynapseError as e:
             logger.warning("[session %s] bad param: %s", session_id, e)
             self._sso_handler.render_error(request, "bad_param", e.msg, code=e.code)
             return
 
         await self._sso_handler.handle_submit_username_request(
-            request, localpart, use_display_name, session_id
+            request, session_id, localpart, use_display_name, emails_to_use
         )
-
-
-class AvailabilityCheckResource(DirectServeJsonResource):
-    def __init__(self, hs: "HomeServer"):
-        super().__init__()
-        self._sso_handler = hs.get_sso_handler()
-
-    async def _async_render_GET(self, request: Request):
-        localpart = parse_string(request, "username", required=True)
-        session_id = get_username_mapping_session_cookie_from_request(request)
-        is_available = await self._sso_handler.check_username_availability(
-            localpart, session_id
-        )
-        return 200, {"available": is_available}

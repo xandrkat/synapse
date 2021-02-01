@@ -1222,7 +1222,7 @@ class UsernamePickerTestCase(HomeserverTestCase):
         # that should redirect to the username picker
         self.assertEqual(channel.code, 302, channel.result)
         picker_url = channel.headers.getRawHeaders("Location")[0]
-        self.assertEqual(picker_url, "/_synapse/client/pick_username")
+        self.assertEqual(picker_url, "/_synapse/client/pick_username/account_details")
 
         # ... with a username_mapping_session cookie
         cookies = {}  # type: Dict[str,str]
@@ -1247,11 +1247,10 @@ class UsernamePickerTestCase(HomeserverTestCase):
 
         # Now, submit a username to the username picker, which should serve a redirect
         # to the completion page
-        submit_path = picker_url + "/submit"
         content = urlencode({b"username": b"bobby"}).encode("utf8")
         chan = self.make_request(
             "POST",
-            path=submit_path,
+            path=picker_url,
             content=content,
             content_is_form=True,
             custom_headers=[
@@ -1268,7 +1267,7 @@ class UsernamePickerTestCase(HomeserverTestCase):
         chan = self.make_request(
             "GET",
             path=location_headers[0],
-            custom_headers=[("Cookie", "username_mapping_session=" + session_id),],
+            custom_headers=[("Cookie", "username_mapping_session=" + session_id)],
         )
         self.assertEqual(chan.code, 302, chan.result)
         location_headers = chan.headers.getRawHeaders("Location")
