@@ -484,6 +484,21 @@ class RoomMemberWorkerStore(EventsWorkerStore):
         )
         return frozenset(r.room_id for r in rooms)
 
+    @cached(cache_context=True, iterable=True)
+    async def get_rooms_for_destination(
+        self, destination: str, max_stream_ordering: Optional[int] = None,
+    ):
+        sql = """
+        select distinct e.room_id from current_state_events cse
+            inner join events e using (event_id)
+        where
+            cse.state_key = ?
+            and cse.membership = ?
+            and e.stream_ordering < 10000000;
+        """
+
+        args = ("%:" + destination, Membership.JOIN)
+
     @cached(max_entries=500000, iterable=True)
     async def get_users_who_share_room_with_user(self, user_id: str) -> Set[str]:
         """Returns the set of users who share a room with `user_id`

@@ -861,7 +861,10 @@ class PresenceHandler(BasePresenceHandler):
         """Process current state deltas to find new joins that need to be
         handled.
         """
+        join_deltas = []
+
         for delta in deltas:
+            stream_id = delta["stream_id"]
             typ = delta["type"]
             state_key = delta["state_key"]
             room_id = delta["room_id"]
@@ -892,12 +895,32 @@ class PresenceHandler(BasePresenceHandler):
                     # Ignore changes to join events.
                     continue
 
-            await self._on_user_joined_room(room_id, state_key)
+            join_deltas.append(delta)
 
-    async def _on_user_joined_room(self, room_id: str, user_id: str) -> None:
-        """Called when we detect a user joining the room via the current state
-        delta stream.
+        await self._handle_join_deltas(deltas)
+
+    async def _handle_join_deltas(
+        join_event_data: List[Tuple]
+    ) -> None:
+        """Send out presence updates given a collection of user room join to a room.
+
+        We process these in batch as joining a room can produce many new joins in the
+        event stream at once.
+        ...
         """
+        # For each delta:
+
+            # If this is a local join, just get all hosts in the room
+
+            # If this is a remote join, check if this is the first time a user from this hs
+            # has joined this room (at this Stream ordering!). If it is, note down this host
+
+        # Now we have a list of hosts
+
+        # Figure out which hosts we haven't seen before (whether we share a room
+        # with them currently. Might need to take into account the list of local joins?)
+
+        # Send presence to the remaining hosts
 
         if self.is_mine_id(user_id):
             # If this is a local user then we need to send their presence
@@ -906,8 +929,44 @@ class PresenceHandler(BasePresenceHandler):
             # TODO: We should be able to filter the hosts down to those that
             # haven't previously seen the user
 
+            # Not only do we want to check if we've seen this homeserver before. Really,
+            # we want to check that this homeserver has not seen this user before
+            #
+            # So REALLY, we want to check if whether this user already shares a room with
+            # another user on the remote homeserver
+
             state = await self.current_state_for_user(user_id)
             hosts = await self.state.get_current_hosts_in_room(room_id)
+
+            # Get list of rooms ID that this user is in
+            user_rooms = await self.store.get_rooms_for_user(user_id)
+
+            # How about we use the users_who_share_pub/private_rooms tables,
+            # which presumably have indexes on user1/user2.
+
+            for host in hosts:
+                # Get the current list of rooms that this host is in
+                shared_rooms = await self.store.get_shared_rooms_for_user_and_destination(
+                    user_id, host
+                )
+
+                # If this user already shares a room with another user on this host,
+                # then that host should already have presence information for this user.
+                if len(shared_rooms) > 2:
+                    continue
+
+                # Check what other rooms this user shares with other users on a homeserver
+                room_ids = await self.store.get_rooms_for_destination(
+                    destination=host, max_stream_ordering=stream_id,
+                )
+
+                if len(room_ids) > 1:
+                    # This homeserver has a user in another room that we're aware of
+                    # It's not the first time we've seen this homeserver
+                    return
+
+            # Filter out ourselves.
+            hosts.discard(self.server_name)
 
             self.federation.send_presence_to_destinations(
                 states=[state], destinations=hosts

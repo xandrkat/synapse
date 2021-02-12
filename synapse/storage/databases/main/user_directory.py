@@ -667,6 +667,52 @@ class UserDirectoryStore(UserDirectoryBackgroundUpdateStore):
         users.update(rows)
         return list(users)
 
+    async def get_shared_rooms_for_user_and_destination(
+        self, user_id: str, destination: str
+    ) -> Set[str]:
+        """Returns the rooms that a local user shares with any user from a remote
+        destination
+
+        Args:
+            user_id: The MXID of a local user
+            destination: The server name of the remote destination
+
+        Returns:
+            A set of room ID's that both the local user and one or more users from the
+            destination share.
+        """
+
+        def _get_shared_rooms_for_user_and_destination_txn(txn):
+            destination_clause = "%:" + destination
+
+            txn.execute(
+                """
+                SELECT p1.room_id
+                FROM users_in_public_rooms as p1
+                INNER JOIN users_in_public_rooms as p2
+                    p1.room_id = p2.room_id
+                    AND p1.user_id = ?
+                    AND p2.user_id LIKE ?
+                UNION
+                SELECT room_id
+                FROM users_who_share_private_rooms
+                WHERE
+                    user_id = ?
+                    AND other_user_id LIKE ?
+                """,
+                (user_id, destination, user_id, destination_clause),
+            )
+
+            rows = self.db_pool.cursor_to_dict(txn)
+            return rows
+
+        rows = await self.db_pool.runInteraction(
+            "get_shared_rooms_for_user_and_destination",
+            _get_shared_rooms_for_user_and_destination_txn,
+        )
+
+        return {row["room_id"] for row in rows}
+
     @cached()
     async def get_shared_rooms_for_users(
         self, user_id: str, other_user_id: str
