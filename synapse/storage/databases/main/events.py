@@ -1245,8 +1245,10 @@ class PersistEventsStore:
                     logger.exception("")
                     raise
 
+                # update the stored internal_metadata to update the "outlier" flag.
+                # TODO: This is unused as of Synapse 1.29. Remove it once we are happy
+                #  to drop backwards-compatibility with 1.28.
                 metadata_json = json_encoder.encode(event.internal_metadata.get_dict())
-
                 sql = "UPDATE event_json SET internal_metadata = ? WHERE event_id = ?"
                 txn.execute(sql, (metadata_json, event.event_id))
 
@@ -1294,6 +1296,12 @@ class PersistEventsStore:
             d.pop("redacted_because", None)
             return d
 
+        def get_internal_metadata(event):
+            # temporary hack for compatibility with Synapse 1.28 and earlier
+            im = event.internal_metadata.get_dict()
+            im["outlier"] = event.internal_metadata.outlier
+            return im
+
         self.db_pool.simple_insert_many_txn(
             txn,
             table="event_json",
@@ -1302,7 +1310,7 @@ class PersistEventsStore:
                     "event_id": event.event_id,
                     "room_id": event.room_id,
                     "internal_metadata": json_encoder.encode(
-                        event.internal_metadata.get_dict()
+                        get_internal_metadata(event)
                     ),
                     "json": json_encoder.encode(event_dict(event)),
                     "format_version": event.format_version,
