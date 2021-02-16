@@ -1,0 +1,1 @@
+Fix cached results to the experimental shared_rooms endpoint never being invalidated.
