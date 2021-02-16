@@ -506,13 +506,21 @@ class UserDirectoryBackgroundUpdateStore(StateDeltasStore):
             user_ids
         """
 
-        await self.db_pool.simple_upsert_many(
-            table="users_in_public_rooms",
-            key_names=["user_id", "room_id"],
-            key_values=[(user_id, room_id) for user_id in user_ids],
-            value_names=(),
-            value_values=None,
-            desc="add_users_in_public_rooms",
+        def _add_users_in_public_rooms_txn(txn):
+            self.db_pool.simple_upsert_many_txn(
+                txn,
+                table="users_in_public_rooms",
+                key_names=["user_id", "room_id"],
+                key_values=[(user_id, room_id) for user_id in user_ids],
+                value_names=(),
+                value_values=None,
+            )
+
+            # Invalidate cached storage methods that rely on this table
+            self._invalidate_all_cache_and_stream(txn, self.get_shared_rooms_for_users)
+
+        await self.db_pool.runInteraction(
+            "add_users_in_public_rooms", _add_users_in_public_rooms_txn
         )
 
     async def delete_all_from_user_dir(self) -> None:
@@ -667,7 +675,7 @@ class UserDirectoryStore(UserDirectoryBackgroundUpdateStore):
         users.update(rows)
         return list(users)
 
-    @cached()
+    @cached(iterable=True)
     async def get_shared_rooms_for_users(
         self, user_id: str, other_user_id: str
     ) -> Set[str]:
