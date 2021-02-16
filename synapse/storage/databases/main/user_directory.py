@@ -483,16 +483,24 @@ class UserDirectoryBackgroundUpdateStore(StateDeltasStore):
             user_id_tuples: iterable of 2-tuple of user IDs.
         """
 
-        await self.db_pool.simple_upsert_many(
-            table="users_who_share_private_rooms",
-            key_names=["user_id", "other_user_id", "room_id"],
-            key_values=[
-                (user_id, other_user_id, room_id)
-                for user_id, other_user_id in user_id_tuples
-            ],
-            value_names=(),
-            value_values=None,
-            desc="add_users_who_share_room",
+        def _add_users_who_share_private_room_txn(txn):
+            self.db_pool.simple_upsert_many_txn(
+                txn,
+                table="users_who_share_private_rooms",
+                key_names=["user_id", "other_user_id", "room_id"],
+                key_values=[
+                    (user_id, other_user_id, room_id)
+                    for user_id, other_user_id in user_id_tuples
+                ],
+                value_names=(),
+                value_values=None,
+            )
+
+            # Invalidate cached storage methods that rely on this table
+            self._invalidate_all_cache_and_stream(txn, self.get_shared_rooms_for_users)
+
+        await self.db_pool.runInteraction(
+            "add_users_who_share_private_room", _add_users_who_share_private_room_txn
         )
 
     async def add_users_in_public_rooms(
