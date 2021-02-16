@@ -395,7 +395,9 @@ class PurgeEventsStore(StateGroupWorkerStore, SQLBaseStore):
         #       index on them. In any case we should be clearing out 'stream' tables
         #       periodically anyway (#5888)
 
-        # TODO: we could probably usefully do a bunch of cache invalidation here
+        # Invalidate cached storage methods that rely on these tables
+        # TODO: there are likely a lot more caches that need to be invalidated here
+        self._invalidate_all_cache_and_stream(txn, self.get_shared_rooms_for_users)
 
         logger.info("[purge] done")
 
