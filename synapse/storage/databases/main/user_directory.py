@@ -597,6 +597,9 @@ class UserDirectoryStore(UserDirectoryBackgroundUpdateStore):
             )
             txn.call_after(self.get_user_in_directory.invalidate, (user_id,))
 
+            # Invalidate cached storage methods that rely on these tables
+            self._invalidate_all_cache_and_stream(txn, self.get_shared_rooms_for_users)
+
         await self.db_pool.runInteraction(
             "remove_from_user_dir", _remove_from_user_dir_txn
         )
@@ -650,6 +653,9 @@ class UserDirectoryStore(UserDirectoryBackgroundUpdateStore):
                 table="users_in_public_rooms",
                 keyvalues={"user_id": user_id, "room_id": room_id},
             )
+
+            # Invalidate cached storage methods that rely on these tables
+            self._invalidate_all_cache_and_stream(txn, self.get_shared_rooms_for_users)
 
         await self.db_pool.runInteraction(
             "remove_user_who_share_room", _remove_user_who_share_room_txn

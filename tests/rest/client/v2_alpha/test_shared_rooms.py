@@ -133,6 +133,12 @@ class UserSharedRoomsTest(unittest.HomeserverTestCase):
 
         self.helper.leave(room, user=u1, tok=u1_token)
 
+        # Check user1's view of shared rooms with user2
+        channel = self._get_shared_rooms(u1_token, u2)
+        self.assertEquals(200, channel.code, channel.result)
+        self.assertEquals(len(channel.json_body["joined"]), 0)
+
+        # Check user2's view of shared rooms with user1
         channel = self._get_shared_rooms(u2_token, u1)
         self.assertEquals(200, channel.code, channel.result)
         self.assertEquals(len(channel.json_body["joined"]), 0)
