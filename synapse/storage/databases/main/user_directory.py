@@ -542,6 +542,9 @@ class UserDirectoryBackgroundUpdateStore(StateDeltasStore):
             txn.execute("DELETE FROM users_who_share_private_rooms")
             txn.call_after(self.get_user_in_directory.invalidate_all)
 
+            # Invalidate cached storage methods that rely on these tables
+            self._invalidate_all_cache_and_stream(txn, self.get_shared_rooms_for_users)
+
         await self.db_pool.runInteraction(
             "delete_all_from_user_dir", _delete_all_from_user_dir_txn
         )
