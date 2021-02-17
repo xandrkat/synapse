@@ -861,6 +861,7 @@ class PresenceHandler(BasePresenceHandler):
         """Process current state deltas to find new joins that need to be
         handled.
         """
+        logger.info("Handling state deltas! %s", deltas)
         for delta in deltas:
             typ = delta["type"]
             state_key = delta["state_key"]
